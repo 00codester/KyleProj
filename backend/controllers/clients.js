@@ -148,6 +148,27 @@ const updateClient = async(req, res) =>{
     }
 };
 
+const loginEmailandPassword = async (req, res) => {
+    const {email, password} = req.body;
+    const result = await mongodb
+        .getDb()
+        .db()
+        .collection('clients')
+        .findOne({email});
+    if(result){
+        //res.json('found');
+        //const passOk = await bcrypt.compareSync(password, result.password);
+        if (password == result.password){
+            res.cookie('token', '').json('password ok');
+            //res.json('password ok');
+        } else{
+            res.status(422).json('password did not match');
+        }
+    } else {
+        res.json('not found');
+    }
+};
+
 // const addInvtoClient = async(req, res) => {
 //     try {
 //         const clientId = new ObjectId(req.params.id);
@@ -167,5 +188,6 @@ module.exports = {
     getClientByEmail,
     deleteClient,
     postNewClient,
-    updateClient
+    updateClient,
+    loginEmailandPassword
 }

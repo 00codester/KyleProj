@@ -24,4 +24,7 @@ routes.post('/client/', clientController.postNewClient);
 //update existing client
 routes.patch('/client/:id', clientController.updateClient);
 
+//login route   
+routes.post('/login', clientController.loginEmailandPassword);
+
 module.exports = routes;
