@@ -1,5 +1,7 @@
+const { response } = require('express');
 const mongodb = require('../db/connect');
 const objectId = require('mongodb').ObjectId;
+const bcrypt = require('bcrypt');
 
 const getClientByID = async (req, res, next) => {
     console.log("In get client by ID");
@@ -43,7 +45,7 @@ const getClientByEmail = async (req, res) => {
         });
     } catch (e) {
         console.log(e);
-        res.status(400).json("Error in get client by email");
+        //res.status(400).json("Error in get client by email");
     }
 };
 
@@ -68,25 +70,49 @@ const deleteClient = async (req, res) => {
 const postNewClient = async (req, res) => {
     //const postData = req.body;
     try {
-        const newClient = {
-            fname: req.body.fname,
-            lname: req.body.lname,
-            email: req.body.email,
-            zip: req.body.zip,
-            password: req.body.password,
-            selling: []
-        };
-        const result = await mongodb
+        const email = req.body.email;
+        const echeck = await mongodb
             .getDb()
             .db()
             .collection('clients')
-            .insertOne(newClient);
-        //res.setHeader("Content-Type", "application/json").status(201).json(result);
-        if (result.acknowledged) {
-            res.status(201).json(result);
-        } else {
-            res.status(500).json(response.error || 'Error occured while creating new client');
-        }
+            .findOne({email: email});
+
+        //console.log(echeck);
+        if(!echeck){
+
+        
+            const saltRounds = 10;
+            const pass = req.body.password;
+
+            const hashpass = await bcrypt
+                .genSalt(saltRounds)
+                .then(salt => {
+                    return bcrypt.hash(pass, salt);
+                })
+                .catch(e => console.error(e.message));
+                
+            const newClient = {
+                fname: req.body.fname,
+                lname: req.body.lname,
+                email: req.body.email,
+                zip: req.body.zip,
+                password: hashpass,
+                selling: []
+            };
+            const result = await mongodb
+                .getDb()
+                .db()
+                .collection('clients')
+                .insertOne(newClient);
+            //res.setHeader("Content-Type", "application/json").status(201).json(result);
+            if (result.acknowledged) {
+                res.status(201).json(result);
+            } else {
+                res.status(500).json(result.error || 'Error occured while creating new client');
+            }
+        }  else {
+            res.status(422).json( res.error || 'email is already registered');
+        } 
     } catch (e) {
         console.log(e);
         res
