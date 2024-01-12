@@ -23,7 +23,9 @@ export default function RegisterPage(){
             });
             alert('Registration successful. Now you can log in');
         } catch (e) {
-            alert(`Registration failed. ${e.message} Please try again later`);
+            //let err = JSON.stringify(e);
+            alert(`Registration failed. ${e.response.data} Please try again.`);
+            //console.log(e.response.data);
         }
 
 

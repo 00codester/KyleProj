@@ -2,6 +2,10 @@ const { response } = require('express');
 const mongodb = require('../db/connect');
 const objectId = require('mongodb').ObjectId;
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const jwtSecret = 'aasdfadjqwrptowriqh498q398jgq3h49thq43hjfrwfaskdfj';
+const reactApp = 'http://localhost:5173';
 
 const getClientByID = async (req, res, next) => {
     console.log("In get client by ID");
@@ -68,7 +72,7 @@ const deleteClient = async (req, res) => {
 
 //add new client
 const postNewClient = async (req, res) => {
-    //const postData = req.body;
+    
     try {
         const email = req.body.email;
         const echeck = await mongodb
@@ -77,7 +81,7 @@ const postNewClient = async (req, res) => {
             .collection('clients')
             .findOne({email: email});
 
-        //console.log(echeck);
+       
         if(!echeck){
 
         
@@ -104,17 +108,16 @@ const postNewClient = async (req, res) => {
                 .db()
                 .collection('clients')
                 .insertOne(newClient);
-            //res.setHeader("Content-Type", "application/json").status(201).json(result);
             if (result.acknowledged) {
                 res.status(201).json(result);
             } else {
-                res.status(500).json(result.error || 'Error occured while creating new client');
+                res.status(500).json(result.error || 'Error occured while creating new client.');
             }
         }  else {
-            res.status(422).json( res.error || 'email is already registered');
+            res.status(422).json( res.error || 'Email is already registered.');
         } 
     } catch (e) {
-        console.log(e);
+        //console.log(e);
         res
             .status(400)
             .json(
@@ -180,18 +183,33 @@ const loginEmailandPassword = async (req, res) => {
         .getDb()
         .db()
         .collection('clients')
-        .findOne({email});
+        .findOne({email: email});
     if(result){
         //res.json('found');
-        //const passOk = await bcrypt.compareSync(password, result.password);
-        if (password == result.password){
-            res.cookie('token', '').json('password ok');
-            //res.json('password ok');
+        const passOk = await bcrypt.compareSync(password, result.password);
+        if (passOk){
+            jwt.sign({id: result._id, 
+                email: result.email}, jwtSecret, {}, (err, token) => {
+                    if(err) {throw err;}
+                    const key = 'password';
+                    delete result[key]
+                    const filteredData = result;
+                    res.setHeader('Access-Control-Allow-Origin', reactApp)
+                        .cookie('token', token)
+                        .json(filteredData);
+
+                        //, info was in jwt
+                // fname: result.fname, 
+                // zip: result.zip, 
+                // selling: result.selling
+            } );
+            
+            //res.status(201).json('password ok');
         } else{
-            res.status(422).json('password did not match');
+            res.status(422).json('Password did not match.');
         }
     } else {
-        res.json('not found');
+        res.status(422).json('User not found.');
     }
 };
 

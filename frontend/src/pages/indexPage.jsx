@@ -5,7 +5,7 @@ export default function IndexPage () {
     return (
         <>
         <div>
-
+          index page here
   
         </div>
         <div className="m-4 flex items-center justify-between gap-2 border border-secondary rounded-full pl-4 shadow-md shadow-gray-200">
